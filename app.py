@@ -1,24 +1,21 @@
 import streamlit as st
 import pandas as pd
-import os
 from openai import OpenAI
-from dotenv import load_dotenv
 import io
 import contextlib
 import io as io_sys
 
-load_dotenv()
+# Pegando a chave da OpenAI direto do Streamlit Secrets
+api_key = st.secrets["OPENAI_API_KEY"]
 
 try:
     import openpyxl
 except ImportError:
-    st.error("❌ A biblioteca 'openpyxl' é necessária para ler arquivos .xlsx. Adicione 'openpyxl' ao requirements.txt.")
+    st.error("❌ A biblioteca 'openpyxl' é necessária para ler arquivos .xlsx. Adicione 'openpyxl' no requirements.txt.")
     st.stop()
 
-# Chave da API
-api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
-    st.error("❌ Chave da API OpenAI não encontrada. Verifique o arquivo .env")
+    st.error("❌ Chave da API OpenAI não encontrada nos segredos.")
     st.stop()
 
 # Debug da chave
@@ -26,15 +23,16 @@ st.sidebar.write(f"🔑 Chave carregada: {len(api_key)} caracteres")
 st.sidebar.write(f"🔑 Início: {api_key[:15]}...")
 st.sidebar.write(f"🔑 Final: ...{api_key[-10:]}")
 
-# Limpar espaços e caracteres extras
 api_key = api_key.strip().replace('\n', '').replace('\r', '')
 
-# Verificar se a chave tem tamanho correto
 if len(api_key) > 200 or len(api_key) < 50:
     st.error(f"⚠️ Chave com tamanho suspeito: {len(api_key)} caracteres")
     st.stop()
 
 client = OpenAI(api_key=api_key)
+
+# O resto do seu código continua igual...
+
 
 # Teste simples da API
 try:
