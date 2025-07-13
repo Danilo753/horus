@@ -1,27 +1,25 @@
 import streamlit as st
 import pandas as pd
+import os
 from openai import OpenAI
 import io
 import contextlib
 import io as io_sys
 
-# Pegando a chave da OpenAI direto do Streamlit Secrets
+# 🔐 Chave da OpenAI vinda de Streamlit Cloud
 api_key = st.secrets["OPENAI_API_KEY"]
 
+# Testa se openpyxl está instalado (para arquivos .xlsx)
 try:
     import openpyxl
 except ImportError:
     st.error("❌ A biblioteca 'openpyxl' é necessária para ler arquivos .xlsx. Adicione 'openpyxl' no requirements.txt.")
     st.stop()
 
+# Valida a chave
 if not api_key:
     st.error("❌ Chave da API OpenAI não encontrada nos segredos.")
     st.stop()
-
-# Debug da chave
-st.sidebar.write(f"🔑 Chave carregada: {len(api_key)} caracteres")
-st.sidebar.write(f"🔑 Início: {api_key[:15]}...")
-st.sidebar.write(f"🔑 Final: ...{api_key[-10:]}")
 
 api_key = api_key.strip().replace('\n', '').replace('\r', '')
 
@@ -29,10 +27,8 @@ if len(api_key) > 200 or len(api_key) < 50:
     st.error(f"⚠️ Chave com tamanho suspeito: {len(api_key)} caracteres")
     st.stop()
 
+# Cliente OpenAI
 client = OpenAI(api_key=api_key)
-
-# O resto do seu código continua igual...
-
 
 # Teste simples da API
 try:
@@ -40,12 +36,9 @@ try:
     st.sidebar.success("✅ API OpenAI funcionando")
 except Exception as e:
     st.sidebar.error(f"❌ Erro na API: {str(e)}")
-    # Tenta com chave sem prefixo se houver
-    if api_key.startswith('sk-'):
-        st.sidebar.info("Tentando sem prefixo sk-...")
 
+# Configuração inicial
 st.set_page_config(page_title="Análise de Dados com IA", layout="centered")
-
 st.title("📊 Análise de Dados em Linguagem Natural")
 st.write("Envie **um ou mais arquivos** (.csv, .xlsx, .json...) e pergunte algo como: **Quantas vendas com ovos?**")
 
@@ -56,9 +49,7 @@ uploaded_files = st.file_uploader(
 )
 df = None
 
-# Função para corrigir CSVs desalinhados com IA
-
-
+# Função para corrigir CSVs com IA
 def limpar_csv_com_ia(conteudo_csv: str) -> str:
     prompt = (
         "Corrija o seguinte CSV desalinhado ou com erro e retorne apenas o CSV corrigido separado por ponto e vírgula:\n\n"
@@ -73,12 +64,10 @@ def limpar_csv_com_ia(conteudo_csv: str) -> str:
         )
     except Exception as e:
         st.error(f"Erro na API durante limpeza CSV: {e}")
-        return conteudo_csv  # Retorna original se falhar
+        return conteudo_csv
     return resposta.choices[0].message.content.strip()
 
-# Carregar e validar o arquivo
-
-
+# Carregador de arquivos
 def carregar_arquivo(uploaded_file, ext):
     try:
         if ext == ".csv":
@@ -104,8 +93,7 @@ def carregar_arquivo(uploaded_file, ext):
         st.error(f"Erro ao processar o arquivo: {e}")
         return None
 
-
-# Carregar os arquivos enviados
+# Processa os arquivos
 dfs = []
 if uploaded_files:
     for file in uploaded_files:
@@ -113,7 +101,7 @@ if uploaded_files:
         df_temp = carregar_arquivo(file, ext)
         if df_temp is not None:
             dfs.append(df_temp)
-    
+
     if dfs:
         df = pd.concat(dfs, ignore_index=True)
         st.success(f"✅ {len(dfs)} arquivo(s) carregado(s) e unificado(s) com sucesso!")
@@ -123,7 +111,7 @@ if uploaded_files:
 prompt = st.text_input("💬 Escreva sua pergunta:",
                        placeholder="Ex: Quantas vendas com 'ovos'?")
 
-# Execução da IA
+# Análise com IA
 if st.button("🔎 Analisar com IA") and df is not None and prompt:
     with st.spinner("🔧 Consultando a IA..."):
         try:
@@ -144,12 +132,9 @@ if st.button("🔎 Analisar com IA") and df is not None and prompt:
 
             codigo = resposta.choices[0].message.content.strip()
 
-            # Remove blocos de markdown caso venham
             if codigo.startswith("```"):
-                codigo = codigo.replace(
-                    "```python", "").replace("```", "").strip()
+                codigo = codigo.replace("```python", "").replace("```", "").strip()
 
-            # Detecta se o código usa .str e prepara DataFrame
             usa_str = ".str" in codigo
             df_exec = df.copy()
             if usa_str:
@@ -158,16 +143,13 @@ if st.button("🔎 Analisar com IA") and df is not None and prompt:
             exec_env = {"df": df_exec, "pd": pd}
             buffer = io_sys.StringIO()
 
-            # Captura o resultado da execução
             with contextlib.redirect_stdout(buffer):
-                exec("resultado = " +
-                     codigo if "=" not in codigo else codigo, exec_env)
+                exec("resultado = " + codigo if "=" not in codigo else codigo, exec_env)
 
             resultado_exec = exec_env.get("resultado", None)
             saida_print = buffer.getvalue().strip()
 
             st.success("✅ Resultado da análise:")
-
             if resultado_exec is not None:
                 st.write(resultado_exec)
             elif saida_print:
