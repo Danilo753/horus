@@ -9,14 +9,14 @@ import io as io_sys
 # 🔐 Chave da OpenAI vinda de Streamlit Cloud
 api_key = st.secrets["OPENAI_API_KEY"]
 
-# Testa se openpyxl está instalado (caso queira futuramente usar .xlsx)
+# Testa se openpyxl está instalado (caso queira usar .xlsx futuramente)
 try:
     import openpyxl
 except ImportError:
     st.error("❌ A biblioteca 'openpyxl' é necessária para ler arquivos .xlsx. Adicione 'openpyxl' no requirements.txt.")
     st.stop()
 
-# Valida a chave
+# Validação da chave
 if not api_key:
     st.error("❌ Chave da API OpenAI não encontrada nos segredos.")
     st.stop()
@@ -30,17 +30,17 @@ if len(api_key) > 200 or len(api_key) < 50:
 # Cliente OpenAI
 client = OpenAI(api_key=api_key)
 
-# Teste simples da API
+# Teste de conexão com a API
 try:
     test_response = client.models.list()
     st.sidebar.success("✅ API OpenAI funcionando")
 except Exception as e:
     st.sidebar.error(f"❌ Erro na API: {str(e)}")
 
-# Configuração inicial
+# Interface Streamlit
 st.set_page_config(page_title="Análise de Dados com IA", layout="centered")
 st.title("📊 Análise de Dados em Linguagem Natural")
-st.write("O sistema está usando um arquivo fixo chamado `dados_mercurio.csv`. Faça perguntas como: **Quantas vendas com ovos?**")
+st.write("Este app usa o arquivo fixo `dados_mercurio.csv`. Pergunte algo como: **Quantas vendas com ovos?**")
 
 # Carregamento da base de dados fixa
 try:
@@ -58,6 +58,7 @@ prompt = st.text_input("💬 Escreva sua pergunta:",
 # Análise com IA
 if st.button("🔎 Analisar com IA") and df is not None and prompt:
     with st.spinner("🔧 Consultando a IA..."):
+        saida_print = ""  # Inicializa para evitar NameError
         try:
             amostra_csv = df.head(20).to_csv(index=False)
             prompt_analise = (
@@ -76,14 +77,17 @@ if st.button("🔎 Analisar com IA") and df is not None and prompt:
 
             codigo = resposta.choices[0].message.content.strip()
 
+            # Remove markdown se vier com ```
             if codigo.startswith("```"):
                 codigo = codigo.replace("```python", "").replace("```", "").strip()
 
+            # Garante compatibilidade de tipos
             usa_str = ".str" in codigo
             df_exec = df.copy()
             if usa_str:
                 df_exec = df_exec.astype(str)
 
+            # Ambiente de execução
             exec_env = {"df": df_exec, "pd": pd}
             buffer = io_sys.StringIO()
 
