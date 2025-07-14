@@ -42,12 +42,13 @@ st.set_page_config(page_title="Análise de Dados com IA", layout="centered")
 st.title("📊 Análise de Dados em Linguagem Natural")
 st.write("Envie **um ou mais arquivos** (.csv, .xlsx, .json...) e pergunte algo como: **Quantas vendas com ovos?**")
 
-uploaded_files = st.file_uploader(
-    "📁 Envie seus arquivos",
-    type=["csv", "txt", "tsv", "xlsx", "json"],
-    accept_multiple_files=True
-)
-df = None
+try:
+    df = pd.read_csv("dados_mercurio.xlsx")  # ou pd.read_excel("dados_vendas.xlsx")
+    st.success("✅ Base de dados carregada com sucesso!")
+    st.dataframe(df.head())
+except Exception as e:
+    st.error(f"Erro ao carregar a base de dados: {e}")
+    st.stop()
 
 # Função para corrigir CSVs com IA
 def limpar_csv_com_ia(conteudo_csv: str) -> str:
