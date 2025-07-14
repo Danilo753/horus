@@ -9,7 +9,7 @@ import io as io_sys
 # 🔐 Chave da OpenAI vinda de Streamlit Cloud
 api_key = st.secrets["OPENAI_API_KEY"]
 
-# Testa se openpyxl está instalado (para arquivos .xlsx)
+# Testa se openpyxl está instalado (caso queira futuramente usar .xlsx)
 try:
     import openpyxl
 except ImportError:
@@ -40,73 +40,16 @@ except Exception as e:
 # Configuração inicial
 st.set_page_config(page_title="Análise de Dados com IA", layout="centered")
 st.title("📊 Análise de Dados em Linguagem Natural")
-st.write("Envie **um ou mais arquivos** (.csv, .xlsx, .json...) e pergunte algo como: **Quantas vendas com ovos?**")
+st.write("O sistema está usando um arquivo fixo chamado `dados_mercurio.csv`. Faça perguntas como: **Quantas vendas com ovos?**")
 
+# Carregamento da base de dados fixa
 try:
-    df = pd.read_csv("dados_mercurio.csv")  # ou pd.read_excel("dados_vendas.xlsx")
+    df = pd.read_csv("dados_mercurio.csv")
     st.success("✅ Base de dados carregada com sucesso!")
     st.dataframe(df.head())
 except Exception as e:
     st.error(f"Erro ao carregar a base de dados: {e}")
     st.stop()
-
-# Função para corrigir CSVs com IA
-def limpar_csv_com_ia(conteudo_csv: str) -> str:
-    prompt = (
-        "Corrija o seguinte CSV desalinhado ou com erro e retorne apenas o CSV corrigido separado por ponto e vírgula:\n\n"
-        f"{conteudo_csv}"
-    )
-    try:
-        resposta = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-            max_tokens=200
-        )
-    except Exception as e:
-        st.error(f"Erro na API durante limpeza CSV: {e}")
-        return conteudo_csv
-    return resposta.choices[0].message.content.strip()
-
-# Carregador de arquivos
-def carregar_arquivo(uploaded_file, ext):
-    try:
-        if ext == ".csv":
-            try:
-                return pd.read_csv(uploaded_file, sep=None, engine="python")
-            except Exception:
-                st.warning(f"⚠️ Erro no arquivo {uploaded_file.name}. Tentando corrigir com IA...")
-                conteudo = uploaded_file.read().decode("utf-8")
-                corrigido = limpar_csv_com_ia(conteudo)
-                return pd.read_csv(io.StringIO(corrigido), sep=";")
-        elif ext == ".txt":
-            return pd.read_csv(uploaded_file, sep=None, engine="python")
-        elif ext == ".tsv":
-            return pd.read_csv(uploaded_file, delimiter="\t")
-        elif ext == ".xlsx":
-            return pd.read_excel(uploaded_file)
-        elif ext == ".json":
-            return pd.read_json(uploaded_file)
-        else:
-            st.error("❌ Formato não suportado.")
-            return None
-    except Exception as e:
-        st.error(f"Erro ao processar o arquivo: {e}")
-        return None
-
-# Processa os arquivos
-dfs = []
-if uploaded_files:
-    for file in uploaded_files:
-        ext = os.path.splitext(file.name)[-1].lower()
-        df_temp = carregar_arquivo(file, ext)
-        if df_temp is not None:
-            dfs.append(df_temp)
-
-    if dfs:
-        df = pd.concat(dfs, ignore_index=True)
-        st.success(f"✅ {len(dfs)} arquivo(s) carregado(s) e unificado(s) com sucesso!")
-        st.dataframe(df.head())
 
 # Entrada do usuário
 prompt = st.text_input("💬 Escreva sua pergunta:",
