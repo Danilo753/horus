@@ -43,7 +43,7 @@ st.title("📊 Análise de Dados em Linguagem Natural")
 st.write("Envie **um ou mais arquivos** (.csv, .xlsx, .json...) e pergunte algo como: **Quantas vendas com ovos?**")
 
 try:
-    df = pd.read_csv("dados_mercurio.xlsx")  # ou pd.read_excel("dados_vendas.xlsx")
+    df = pd.read_csv("dados_mercurio.csv")  # ou pd.read_excel("dados_vendas.xlsx")
     st.success("✅ Base de dados carregada com sucesso!")
     st.dataframe(df.head())
 except Exception as e:
