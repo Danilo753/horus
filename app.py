@@ -44,7 +44,7 @@ st.write("Este app usa o arquivo fixo `dados_mercurio.csv`. Pergunte algo como: 
 
 # Carregamento da base de dados fixa
 try:
-    df = pd.read_csv("dados_mercurio.csv")
+    df = pd.read_csv("supermercado_vendas.csv")
     st.success("✅ Base de dados carregada com sucesso!")
     st.dataframe(df.head())
 except Exception as e:
