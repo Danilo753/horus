@@ -7,13 +7,14 @@ from dotenv import load_dotenv
 import logging
 import contextlib
 import io as io_sys
+import matplotlib.pyplot as plt
 
 load_dotenv()
 st.set_page_config(page_title="Horus - IA para Análise de Dados", layout="centered", initial_sidebar_state="collapsed")
 st.markdown("""<style>body {background-color: #0e1117; color: white;} .stTextInput>div>div>input {color:white;}</style>""", unsafe_allow_html=True)
 
 # Logo
-logo_path = Path("naga_logo.jpeg")
+logo_path = Path("naga_logo.png")
 if logo_path.exists():
     st.image(str(logo_path), width=80)
 else:
@@ -57,6 +58,13 @@ except Exception as e:
     st.error(f"Erro ao carregar a base de dados: {e}")
     st.stop()
 
+# Função para formatar moeda em R$
+def formatar_moeda_br(valor):
+    try:
+        return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except:
+        return valor
+
 # Entrada do usuário
 prompt = st.text_input("💬 Escreva sua pergunta:",
                        placeholder="Ex: Quantas vendas com 'ovos'?")
@@ -99,7 +107,7 @@ if st.button("🔎 Analisar com IA") and df is not None and prompt:
             if usa_str:
                 df_exec = df_exec.astype(str)
 
-            exec_env = {"df": df_exec, "pd": pd}
+            exec_env = {"df": df_exec, "pd": pd, "plt": plt}
             buffer = io_sys.StringIO()
 
             with contextlib.redirect_stdout(buffer):
@@ -109,12 +117,32 @@ if st.button("🔎 Analisar com IA") and df is not None and prompt:
             saida_print = buffer.getvalue().strip()
 
             st.success("✅ Resultado da análise:")
+            # Exibe o resultado com formatação monetária, se aplicável
             if resultado_exec is not None:
-                st.write(resultado_exec)
+                if isinstance(resultado_exec, (int, float)):
+                    st.write("💰 Resultado:", formatar_moeda_br(resultado_exec))
+
+                elif isinstance(resultado_exec, pd.Series):
+                    st.write(resultado_exec.apply(lambda x: formatar_moeda_br(x) if isinstance(x, (int, float)) else x))
+
+                elif isinstance(resultado_exec, pd.DataFrame):
+                    df_formatado = resultado_exec.copy()
+                    for col in df_formatado.columns:
+                        if df_formatado[col].dtype in ['float64', 'int64']:
+                            df_formatado[col] = df_formatado[col].apply(formatar_moeda_br)
+                    st.dataframe(df_formatado)
+
+                else:
+                    st.write(resultado_exec)
+
             elif saida_print:
                 st.text(saida_print)
             else:
-                st.info("⚠️ A análise foi executada, mas não houve retorno visível.")
+                fig = plt.gcf()
+                if fig.get_axes():
+                    st.pyplot(fig)
+                else:
+                    st.info("⚠️ A análise foi executada, mas não houve retorno visível.")
 
             with st.expander("👨‍💻 Ver código gerado"):
                 st.code(codigo, language='python')
