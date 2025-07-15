@@ -40,7 +40,7 @@ except Exception as e:
 # Interface Streamlit
 st.set_page_config(page_title="Análise de Dados com IA", layout="centered")
 st.title("📊 Análise de Dados em Linguagem Natural")
-st.write("Este app usa o arquivo fixo `dados_mercurio.csv`. Pergunte algo como: **Quantas vendas com ovos?**")
+st.write("Este app usa o arquivo fixo `supermecado_vendas.csv`. Pergunte algo como: **Quantas vendas com ovos?**")
 
 # Carregamento da base de dados fixa
 try:
