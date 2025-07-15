@@ -14,7 +14,7 @@ st.set_page_config(page_title="Horus - IA para Análise de Dados", layout="cente
 st.markdown("""<style>body {background-color: #0e1117; color: white;} .stTextInput>div>div>input {color:white;}</style>""", unsafe_allow_html=True)
 
 # Logo
-logo_path = Path("naga_logo.png")
+logo_path = Path("naga_logo.jpeg")
 if logo_path.exists():
     st.image(str(logo_path), width=80)
 else:
