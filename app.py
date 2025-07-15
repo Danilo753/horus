@@ -6,6 +6,18 @@ import io
 import contextlib
 import io as io_sys
 
+load_dotenv()
+st.set_page_config(page_title="Horus - IA para Análise de Dados", layout="centered", initial_sidebar_state="collapsed")
+st.markdown("""<style>body {background-color: #0e1117; color: white;} .stTextInput>div>div>input {color:white;}</style>""", unsafe_allow_html=True)
+
+logo_path = Path("naga_logo.png")
+if logo_path.exists():
+    st.image(str(logo_path), width=80)
+else:
+    st.warning("⚠️ Logo não encontrada. Verifique se 'naga_logo.png' está na mesma pasta do app.")
+
+st.title("📊 Horus - Análise de Dados com IA")
+st.write("Faça perguntas como: *Qual a média de vendas de arroz?* ou *Quantas vezes o cliente João comprou?*")
 # 🔐 Chave da OpenAI vinda de Streamlit Cloud
 api_key = st.secrets["OPENAI_API_KEY"]
 
@@ -106,4 +118,5 @@ if st.button("🔎 Analisar com IA") and df is not None and prompt:
                 st.info("⚠️ A análise foi executada, mas não houve retorno visível.")
 
         except Exception as e:
-            st.error(f"❌ Erro ao executar o código da IA:\n\n{e}")
+            logging.error(f"Erro ao executar a IA: {e}")
+            st.warning("🤖 Não consegui entender bem a pergunta. Reformule com mais detalhes ou tente uma pergunta diferente.")
